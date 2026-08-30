@@ -255,19 +255,13 @@ async function load(){
     const res = await fetch(DATA_URL + '?t=' + Date.now(), { cache:'no-store' });
     if (!res.ok) throw new Error(res.status);
     DB = await res.json();
-    const next = nextUpdateLabel(DB.updated);
-    document.getElementById('m-updated').textContent = '갱신 ' + DB.updated.replace(/-/g,'.') + ' · 다음 ' + next;
+    document.getElementById('m-updated').textContent = '갱신 ' + DB.updated.replace(/-/g,'.');
     document.getElementById('m-total').textContent = '대기 ' + DB.total + '명';
   }catch(e){
     document.getElementById('m-updated').textContent = '명단을 불러오지 못했습니다';
     show(`<div class="notice"><h2>명단을 불러오지 못했습니다</h2>
       <p>잠시 후 새로고침해 주세요. 계속 같은 화면이 나오면 운영진에게 알려주시면 확인하겠습니다.</p></div>`);
   }
-}
-function nextUpdateLabel(updated){
-  const d = new Date(updated + 'T00:00:00');
-  const n = new Date(d.getFullYear(), d.getMonth() + 2, 0);
-  return (n.getMonth()+1) + '월 ' + n.getDate() + '일';
 }
 
 /* ── 조회 ──────────────────────────────── */
