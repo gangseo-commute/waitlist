@@ -223,7 +223,8 @@
     <div class="rule">
       <b>03</b>
       <p>좌석이 생겼을 때 앞 순번의 탑승 희망월(月)이 뒷 순번의 탑승 희망월(月)보다 늦을 경우, 뒷 순번에게 먼저 가입 안내드립니다.
-        <small>예를 들어 5번의 희망월이 10월, 6번의 희망월이 9월이라면 6번이 먼저 안내를 받습니다. 이때도 5번의 순번은 그대로 유지되며, 희망하신 10월에 순서대로 안내드립니다.</small></p>
+        <small>예를 들어 5번의 희망월이 10월, 6번의 희망월이 9월이라면 6번이 먼저 안내를 받습니다. 이때도 5번의 순번은 그대로 유지되며, 희망하신 10월에 순서대로 안내드립니다.<br>
+          가입 안내는 매월 마지막 주에 다음 달 탑승자를 대상으로 합니다. 희망월이 안내 대상월이거나 이미 지난 분들은 같은 조건으로 보아 순번대로 안내드립니다.</small></p>
     </div>
   </section>
 
@@ -325,10 +326,12 @@ function renderTicket(e){
   let notes = '';
   if (e.memo) notes += `<div class="badge">${esc(e.memo)}</div>`;
   if (e.wd){
-    // 앞 순번의 희망월이 더 늦으면 내가 먼저 안내받음
-    const canJump = DB.entries.filter(x => x.no < e.no && x.wd && ym(x.wd) > ym(e.wd)).length;
-    // 뒷 순번의 희망월이 더 이르면 그분이 먼저 안내받음
-    const jumped  = DB.entries.filter(x => x.no > e.no && x.wd && ym(x.wd) < ym(e.wd)).length;
+    // 비교 기준: 희망월이 다음 안내월 이전이면 모두 '다음 안내월'로 간주 → 이들끼리는 순번대로
+    const me = effYm(e.wd);
+    // 앞 순번의 (보정) 희망월이 더 늦으면 내가 먼저 안내받음
+    const canJump = DB.entries.filter(x => x.no < e.no && x.wd && effYm(x.wd) > me).length;
+    // 뒷 순번의 (보정) 희망월이 더 이르면 그분이 먼저 안내받음
+    const jumped  = DB.entries.filter(x => x.no > e.no && x.wd && effYm(x.wd) < me).length;
     if (canJump) notes += `<div class="badge">앞 순번 중 탑승 희망월이 더 늦은 분이 ${canJump}명 있습니다. 좌석이 생기면 이분들보다 먼저 가입 안내를 받으실 수 있습니다.</div>`;
     if (jumped)  notes += `<div class="badge">뒷 순번 중 탑승 희망월이 더 이른 분이 ${jumped}명 있습니다. 이분들이 먼저 안내를 받을 수 있으며, 회원님의 순번은 그대로 유지됩니다.</div>`;
   }
@@ -362,6 +365,17 @@ function renderMiss(){
 
 /* 탑승 희망월 (YYYY-MM) */
 const ym = d => (d || '').slice(0, 7);
+
+/* 다음 가입 안내 대상월 (YYYY-MM)
+   운영 방식: M월 마지막 주에 M+1월 신규 탑승자를 안내 → 오늘(한국 시간) 기준 다음 달 */
+function nextGuideYm(){
+  const t = new Date().toLocaleDateString('sv-SE', { timeZone:'Asia/Seoul' }); // YYYY-MM-DD
+  let y = +t.slice(0, 4), m = +t.slice(5, 7) + 1;
+  if (m > 12){ m = 1; y++; }
+  return y + '-' + String(m).padStart(2, '0');
+}
+/* 비교용 희망월: 다음 안내월보다 이르면 다음 안내월로 올림 */
+const effYm = d => { const a = ym(d), g = nextGuideYm(); return a < g ? g : a; };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 load();
